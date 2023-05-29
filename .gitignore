@@ -1,0 +1,8 @@
+.stack-work/
+dist-newstyle/
+deploy/
+db/postgres/
+db/database.env
+src/Adapter/PostgreSQL/Migrations_01_Fill_Tables/
+*.env
+*~

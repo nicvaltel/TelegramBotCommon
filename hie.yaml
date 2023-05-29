@@ -1,0 +1,10 @@
+cradle:
+  cabal:
+    - path: "src"
+      component: "lib:Common"
+
+    - path: "app/Main.hs"
+      component: "Common:exe:Common-exe"
+
+    - path: "app/Paths_Common.hs"
+      component: "Common:exe:Common-exe"
