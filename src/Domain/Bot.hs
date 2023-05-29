@@ -22,6 +22,7 @@ import Telegram.Bot.API as Telegram
 import Telegram.Bot.Simple
 import Telegram.Bot.Simple.UpdateParser
 
+
 data ChatState
   = InitSate
   deriving (Show, Eq)
@@ -35,9 +36,9 @@ data Action
   | RecordMsg Int (Maybe Text) Int Text
   deriving (Show, Read)
 
-botStartup :: (MonadIO m) => String -> (Action -> ChatModel -> Eff Action ChatModel) -> m ()
-botStartup tokenStr handleAction = do
-  let token = Token . pack $ tokenStr
+botStartup :: (MonadIO m) => M.BotConfig -> (Action -> ChatModel -> Eff Action ChatModel) -> m ()
+botStartup botConf handleAction = do
+  let token = Token . pack $ M.botToken botConf
   env <- liftIO $ defaultTelegramClientEnv token
   liftIO $ startBot_ (conversationBot updateChatId (incexpBotApp handleAction)) env
 
@@ -90,3 +91,35 @@ actionNewUser :: BotM ()
 actionNewUser = do
   replyString "Я бот. Моё почтение."
   replyString "I'm a bot. Greetings"
+
+
+msgHello, msgTryToRepeat, msgWait :: Text
+msgHello = "Я бот-ретранслятор запросов к OpenAI Chat. Напишите вош запрос (т.е. всё что хотите)"
+msgTryToRepeat = "Не удалось получить ответ. Попробуйте повторить запрос."
+msgWait = "Секундочку..."
+
+handleOpenAIChat :: (M.BotDBModel a, M.BotOpenAIModel a) => a -> Action -> ChatModel -> Eff Action ChatModel
+handleOpenAIChat botLib action model = traceShow action $
+  case action of
+    NoAction -> pure model
+    RecordMsg usrId mayUsrname _ word ->
+      if M.isUserAllowed botLib usrId
+        then do
+          let usrname = fromMaybe (pack $ "user_" <> show usrId) mayUsrname
+          model <# do
+            maybeUser :: Maybe M.User <- liftIO $ M.getUserById botLib usrId
+            when (isNothing maybeUser) $ liftIO $ M.createUser botLib usrId usrname >> pure ()
+            case maybeUser of
+              Just _ -> do
+                replyString msgWait
+                chatAns <- liftIO $  M.sendRequestToChat botLib word
+                case chatAns of
+                  Right answer -> replyString answer
+                  Left _ -> replyString msgTryToRepeat
+                msgSaveResult <- liftIO $ M.insertMsg botLib usrId word
+                case msgSaveResult of
+                  Right _ -> pure ()
+                  Left err -> replyString . pack $ show err
+              Nothing -> replyString msgHello
+            pure NoAction
+        else pure model

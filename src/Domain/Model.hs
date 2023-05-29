@@ -4,7 +4,8 @@
 
 module Domain.Model
   ( BotDBModel (..),
-    BotConfig(..),
+    BotOpenAIModel (..),
+    BotConfig (..),
     UserId,
     Username,
     MessageId,
@@ -12,19 +13,24 @@ module Domain.Model
     Message (..),
     MessageError (..),
     ActionError (..),
-    readBotConfig
+    readBotConfig,
   )
 where
 
 import Control.Monad.Catch (MonadThrow)
 import Control.Monad.IO.Class (MonadIO)
-import Data.Text (Text)
-import Data.Time (UTCTime)
 import Data.Either.Combinators (maybeToRight)
+import Data.Set (Set)
+import Data.Text (Text)
+import qualified Data.Text as T
+import qualified Data.Text.Read as T
+import Data.Time (UTCTime)
 
-newtype BotConfig = BotConfig {
-  botToken :: String
-}
+data BotConfig = BotConfig
+  { botToken :: String,
+    openAiApikey :: T.Text,
+    openAiAllowedUsers :: Set Int
+  }
 
 type UserId = Int
 
@@ -58,8 +64,13 @@ class BotDBModel a where
   createUser :: (MonadIO m, MonadThrow m) => a -> UserId -> Username -> m User
   routineAction :: (MonadIO m, MonadThrow m) => a -> Text -> m (Either ActionError Text)
 
+class BotOpenAIModel a where
+  sendRequestToChat :: a -> T.Text -> IO (Either String T.Text)
+  isUserAllowed :: a -> UserId -> Bool
 
 readBotConfig :: [(String, String)] -> Either String BotConfig
 readBotConfig env = do
   botToken <- maybeToRight "No TOKEN defined" (lookup "BOT_TOKEN" env)
-  pure BotConfig {botToken}
+  openAiApikey <- maybeToRight "No API_KEY defined" (T.pack <$> lookup "API_KEY" env)
+  openAiAllowedUsers <- maybeToRight "No ALLOWED_USERS defined" (read <$> lookup "ALLOWED_USERS" env)
+  pure BotConfig {botToken, openAiApikey, openAiAllowedUsers}

@@ -27,6 +27,7 @@ library
   exposed-modules:
       Adapter.PostgreSQL.Adapter
       Adapter.PostgreSQL.Common
+      Chat
       Domain.Bot
       Domain.Model
       Lib
@@ -42,11 +43,16 @@ library
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , containers
     , data-has
     , dotenv
     , either
     , exceptions
+    , http-client
+    , http-client-tls
     , mtl
+    , openai-hs
+    , openai-servant
     , postgresql-simple
     , postgresql-simple-migration
     , record-hasfield
@@ -74,11 +80,16 @@ executable Common-exe
       Common
     , base >=4.7 && <5
     , bytestring
+    , containers
     , data-has
     , dotenv
     , either
     , exceptions
+    , http-client
+    , http-client-tls
     , mtl
+    , openai-hs
+    , openai-servant
     , postgresql-simple
     , postgresql-simple-migration
     , record-hasfield
