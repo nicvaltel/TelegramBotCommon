@@ -35,7 +35,6 @@ sendRequestToChat apiKey queryMsg =
   do
     manager <- newManager tlsManagerSettings
     -- apiKey <- T.pack <$> getEnv "OPENAI_KEY"
-    -- let apiKey = T.pack "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"
     -- create a openai client that automatically retries up to 4 times on network errors
     let client = makeOpenAIClient apiKey manager 4
     result <- completeChat client (request queryMsg)
@@ -49,7 +48,7 @@ extractContentFromChatChoise = chmContent . chchMessage
 
 run :: T.Text -> IO ()
 run queryMsg = do
-  result <- sendRequestToChat (T.pack "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") queryMsg
+  result <- sendRequestToChat (T.pack "") queryMsg
   case result of
     Left err -> print err
     Right answer -> T.putStrLn answer

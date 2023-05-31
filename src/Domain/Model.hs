@@ -23,7 +23,6 @@ import Data.Either.Combinators (maybeToRight)
 import Data.Set (Set)
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Data.Text.Read as T
 import Data.Time (UTCTime)
 
 data BotConfig = BotConfig
